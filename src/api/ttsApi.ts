@@ -216,22 +216,42 @@ export async function synthesizeTTS(
     // Step 2: Wait for completion
     const result = await waitForTTSCompletion(taskId, deviceTime, sign, cookie, workspaceId);
 
-    if (!result || !result.data.result_json) {
+    if (!result) {
         return null;
     }
 
     try {
-        const resultData = JSON.parse(result.data.result_json);
-        const audioPath = resultData.audio?.path || resultData.audios?.[0]?.path;
-        const duration = resultData.audio?.duration || resultData.audios?.[0]?.duration || 0;
-
-        if (!audioPath) {
-            logger.error('No audio path in result');
+        // Extract audio URL from task_detail
+        const taskDetail = (result.data as any).task_detail;
+        if (!taskDetail || taskDetail.length === 0) {
+            logger.error('No task_detail in result');
             return null;
         }
 
-        logger.debug(`TTS completed in ${Date.now() - startTime}ms, audio: ${audioPath}`);
-        return { audioUrl: audioPath, duration };
+        // Find the audio resource (resource_type 32 is audio/video)
+        const audioResource = taskDetail.find((t: any) => t.resource_type === 32);
+        if (!audioResource) {
+            logger.error('No audio resource found');
+            return null;
+        }
+
+        // Get audio URL from transcode_audio_info or fallback to url
+        let audioUrl = audioResource.url;
+        if (audioResource.transcode_audio_info && audioResource.transcode_audio_info.length > 0) {
+            const transcodeUrl = audioResource.transcode_audio_info[0].url;
+            if (transcodeUrl) {
+                audioUrl = transcodeUrl;
+            }
+        }
+
+        if (!audioUrl) {
+            logger.error('No audio URL in result');
+            return null;
+        }
+
+        const duration = audioResource.duration || 0;
+        logger.debug(`TTS completed in ${Date.now() - startTime}ms, duration: ${duration}ms`);
+        return { audioUrl, duration };
     } catch (error) {
         logger.error(`Failed to parse TTS result: ${error}`);
         return null;
