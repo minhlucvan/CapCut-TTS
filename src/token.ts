@@ -25,8 +25,70 @@ export const getUserRandom = () => {
     return USERS[randomIndex];
 }
 
+// New credentials for HTTP-based TTS API
+interface Credentials {
+    deviceTime: string;
+    sign: string;
+    cookie: string;
+    workspaceId: string;
+}
+
+const CREDENTIALS: Credentials[] = [];
+
+export const getCredentialsRandom = (): Credentials => {
+    // If we have multiple credentials configured
+    if (CREDENTIALS.length > 0) {
+        const randomIndex = Math.floor(Math.random() * CREDENTIALS.length);
+        return CREDENTIALS[randomIndex];
+    }
+
+    // Fall back to single credential from env
+    return {
+        deviceTime: env.DeviceTime || String(Math.floor(Date.now() / 1000)),
+        sign: env.Sign,
+        cookie: env.Cookie,
+        workspaceId: env.WorkspaceId
+    };
+}
+
+export function initCredentials() {
+    // Initialize multiple credentials if configured
+    if (env.Cookies && env.Cookies.length > 0 && env.Cookies[0] !== '') {
+        for (let i = 0; i < env.Cookies.length; i++) {
+            const deviceTime = env.DeviceTimes[i] || env.DeviceTime || String(Math.floor(Date.now() / 1000));
+            const sign = env.Signs[i] || env.Sign;
+            const cookie = env.Cookies[i];
+
+            if (cookie) {
+                CREDENTIALS.push({
+                    deviceTime,
+                    sign,
+                    cookie,
+                    workspaceId: env.WorkspaceId
+                });
+                logger.info(`Credentials ${i} loaded`);
+            }
+        }
+    } else if (env.Cookie) {
+        // Single credential
+        CREDENTIALS.push({
+            deviceTime: env.DeviceTime || String(Math.floor(Date.now() / 1000)),
+            sign: env.Sign,
+            cookie: env.Cookie,
+            workspaceId: env.WorkspaceId
+        });
+        logger.info('Single credential loaded');
+    }
+
+    logger.info(`Total credentials loaded: ${CREDENTIALS.length}`);
+}
+
 export async function tokenTask() {
     logger.info("Token Task started");
+
+    // Initialize new credentials
+    initCredentials();
+
     if (Array.isArray(env.DeviceTimes) && Array.isArray(env.Signs)) {
         tokenTaskMultiple();
     } else {
