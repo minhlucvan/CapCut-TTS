@@ -1,67 +1,84 @@
-export default function speakerParser(type: number, lang = 'vi'): string {
-    let speaker: string;
+import { getVoiceById } from '../config/voices';
 
+// Legacy type-based speaker selection (for backward compatibility)
+export default function speakerParser(type: number, lang = 'vi'): string {
+    // Vietnamese voices
     if (lang === 'vi') {
-        if (type === 1) {
-            return "BV074_streaming";
-        } else if (type === 2) {
-            return "BV075_streaming";
-        } else {
-            return "BV074_streaming";
-        }
+        const viVoices = [
+            'BV074_streaming',      // 0 - Cute Female
+            'BV075_streaming',      // 1 - Confident Male
+            'vi_female_huong',      // 2 - Giọng nữ phổ thông
+            'BV560_streaming',      // 3 - Anh Dũng
+            'BV562_streaming',      // 4 - Chí Mai
+            'BV421_vivn_streaming', // 5 - Sweet Little Girl
+        ];
+        return viVoices[type] || viVoices[0];
     }
-    
-    if (type === 0) {
-        // 謎1 男子1
-        speaker = "BV525_streaming";
-    } else if (type === 1) {
-        // 謎2 坊や
-        speaker = "BV528_streaming";
-    } else if (type === 2) {
-        // カワボ
-        speaker = "BV017_streaming";
-    } else if (type === 3) {
-        // お姉さん
-        speaker = "BV016_streaming";
-    } else if (type === 4) {
-        // 少女
-        speaker = "BV023_streaming";
-    } else if (type === 5) {
-        // 女子
-        speaker = "BV024_streaming";
-    } else if (type === 6) {
-        // 男子2
-        speaker = "BV018_streaming";
-    } else if (type === 7) {
-        // 坊ちゃん
-        speaker = "BV523_streaming";
-    } else if (type === 8) {
-        // 女子"
-        speaker = "BV521_streaming";
-    } else if (type === 9) {
-        // 女子アナ
-        speaker = "BV522_streaming";
-    } else if (type === 10) {
-        // 男性アナ
-        speaker = "BV524_streaming";
-    } else if (type === 11) {
-        // 元気ロリ
-        speaker = "BV520_streaming";
-    } else if (type === 12) {
-        // 明るいハニー
-        speaker = "VOV401_bytesing3_kangkangwuqu";
-    } else if (type === 13) {
-        // 優しいレディー
-        speaker = "VOV402_bytesing3_oh";
-    } else if (type === 14) {
-        // 風雅メゾソプラノ
-        speaker = "VOV402_bytesing3_aidelizan";
-    } else if (type === 15) {
-        // Sakura
-        speaker = "jp_005";
-    } else {
-        // お姉さん
-        speaker = "BV016_streaming";
+
+    // Japanese voices (legacy mapping)
+    const jaVoices = [
+        'BV525_streaming',  // 0 - Male 1
+        'BV528_streaming',  // 1 - Boy
+        'BV017_streaming',  // 2 - Kawaii Voice
+        'BV016_streaming',  // 3 - Onee-san
+        'BV023_streaming',  // 4 - Girl
+        'BV024_streaming',  // 5 - Female
+        'BV018_streaming',  // 6 - Male 2
+        'BV523_streaming',  // 7 - Young Master
+        'BV521_streaming',  // 8 - Female 2
+        'BV522_streaming',  // 9 - Female Announcer
+        'BV524_streaming',  // 10 - Male Announcer
+        'BV520_streaming',  // 11 - Genki Loli
+        'VOV401_bytesing3_kangkangwuqu', // 12 - Bright Honey
+        'VOV402_bytesing3_oh',           // 13 - Gentle Lady
+        'VOV402_bytesing3_aidelizan',    // 14 - Elegant Mezzo-soprano
+        'jp_005',           // 15 - Sakura
+    ];
+
+    return jaVoices[type] || 'BV016_streaming';
+}
+
+// Get speaker info by speaker ID
+export function getSpeakerInfo(speakerId: string): { speaker: string; name: string; platform: number } {
+    const voice = getVoiceById(speakerId);
+    if (voice) {
+        return {
+            speaker: voice.speaker,
+            name: voice.name,
+            platform: voice.platform
+        };
     }
-    return speaker;
-} 
+
+    // Default fallback
+    return {
+        speaker: speakerId,
+        name: 'Unknown Voice',
+        platform: 1
+    };
+}
+
+// Parse speaker from request (can be ID, name, or type number)
+export function parseSpeaker(input: string | number, lang = 'vi'): { speaker: string; name: string; platform: number } {
+    // If it's a number, use legacy type-based selection
+    if (typeof input === 'number') {
+        const speaker = speakerParser(input, lang);
+        return getSpeakerInfo(speaker);
+    }
+
+    // If it's a string, try to find by ID first
+    const voice = getVoiceById(input);
+    if (voice) {
+        return {
+            speaker: voice.speaker,
+            name: voice.name,
+            platform: voice.platform
+        };
+    }
+
+    // Assume it's a valid speaker ID
+    return {
+        speaker: input,
+        name: input,
+        platform: 1
+    };
+}

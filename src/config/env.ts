@@ -16,6 +16,14 @@ const env = {
     // support multiple token
     DeviceTimes: (process.env.DEVICE_TIMES || "").split(','),
     Signs: (process.env.SIGNS || "").split(','),
+
+    // New TTS API settings
+    Cookie: process.env.COOKIE as string || '',
+    WebId: process.env.WEB_ID as string || '7562437725447964177',
+    WorkspaceId: process.env.WORKSPACE_ID as string || '7444016137714581565',
+
+    // Multiple cookies support
+    Cookies: (process.env.COOKIES || "").split('|||'),
 }
 
 export default env;
