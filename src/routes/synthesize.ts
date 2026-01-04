@@ -4,7 +4,7 @@ import getAudioBuffer from '../api/getAudioBuffer';
 import { getUserRandom, getCredentialsRandom } from '../token';
 import createAudioStream from '../api/createAudioStream';
 import { synthesizeTTS, fetchAudioBuffer } from '../api/ttsApi';
-import speakerParser from '../utils/speakerParser';
+import speakerParser, { parseSpeaker } from '../utils/speakerParser';
 import env from '../config/env';
 import logger from '../utils/log';
 
@@ -42,8 +42,11 @@ export default async function synthesize(req: Request, res: Response) {
             return;
         }
 
-        const speaker = req.query.speaker as string || speakerParser(Number(req.query.type));
-        const speakerName = req.query.speaker_name as string || 'TTS Voice';
+        // Get speaker info - supports speaker ID or type number
+        const speakerInput = req.query.speaker as string || speakerParser(Number(req.query.type));
+        const speakerInfo = parseSpeaker(speakerInput);
+        const speaker = speakerInfo.speaker;
+        const speakerName = req.query.speaker_name as string || speakerInfo.name;
 
         // Convert pitch/speed from 0-20 scale to -100 to 100 scale
         const pitchRate = ((Number(req.query.pitch) - 10) / 10) * 100;

@@ -4,6 +4,7 @@ import cors from 'cors';
 import logger from './utils/log';
 import env from './config/env';
 import synthesize from './routes/synthesize';
+import voices from './routes/voices';
 import { tokenTask } from './token';
 
 // エラーハンドリング
@@ -31,3 +32,4 @@ app.use((req, res, next) => {
     res.status(404).end();
 });
 mainRouter.get('/synthesize', synthesize);
+mainRouter.get('/voices', voices);
